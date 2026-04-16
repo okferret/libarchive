@@ -62,25 +62,299 @@ import libarchive
 ### 创建 tar 归档
 
 ```swift
-// 示例代码 - 创建 tar 归档
-// 具体实现需要根据 libarchive C API 进行封装
+import Foundation
+
+func createTarArchive(sourceFiles: [URL], destination: URL) throws {
+    // 创建新的写归档
+    let archive = archive_write_new()
+    defer { archive_write_free(archive) }
+    
+    // 设置格式为 POSIX tar
+    archive_write_set_format_pax_restricted(archive)
+    
+    // 如果需要,可以添加压缩过滤器
+    // archive_write_add_filter_gzip(archive)
+    
+    // 打开目标文件
+    archive_write_open_filename(archive, destination.path)
+    
+    // 遍历并添加每个文件
+    for fileURL in sourceFiles {
+        var entry = archive_entry_new()
+        defer { archive_entry_free(entry) }
+        
+        // 设置文件信息
+        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        let type = attributes[.type] as! FileAttributeType
+        
+        if type == .typeRegular {
+            archive_entry_set_pathname(entry, fileURL.lastPathComponent)
+            archive_entry_set_size(entry, attributes[.size] as! Int64)
+            archive_entry_set_filetype(entry, AE_IFREG)
+            archive_entry_set_perm(entry, 0644)
+            
+            // 写入头信息
+            archive_write_header(archive, entry)
+            
+            // 写入文件内容
+            let data = try Data(contentsOf: fileURL)
+            data.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
+                if let baseAddress = bytes.baseAddress {
+                    archive_write_data(archive, baseAddress, data.count)
+                }
+            }
+        }
+    }
+    
+    archive_write_close(archive)
+}
 ```
 
-### 解压 zip 文件
+### 解压 tar 归档
 
 ```swift
-// 示例代码 - 解压 zip 文件
-// 具体实现需要根据 libarchive C API 进行封装
+import Foundation
+
+func extractTarArchive(archiveURL: URL, destinationDirectory: URL) throws {
+    // 创建新的读归档
+    let archive = archive_read_new()
+    defer { archive_read_free(archive) }
+    
+    // 支持所有格式和过滤器
+    archive_read_support_format_all(archive)
+    archive_read_support_filter_all(archive)
+    
+    // 打开源归档文件
+    archive_read_open_filename(archive, archiveURL.path, 10240)
+    
+    // 创建写磁盘归档
+    let disk = archive_write_disk_new()
+    defer { archive_write_free(disk) }
+    
+    // 设置提取选项
+    archive_write_disk_set_options(disk, ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM)
+    
+    // 遍历归档中的每个条目
+    var entry: UnsafeMutablePointer<archive_entry>?
+    while archive_read_next_header(archive, &entry) == ARCHIVE_OK {
+        // 构建目标路径
+        let path = destinationDirectory.appendingPathComponent(String(cString: archive_entry_pathname(entry!)))
+        archive_entry_set_pathname(entry, path.path)
+        
+        // 写入文件
+        archive_write_header(disk, entry)
+        
+        // 如果是普通文件,写入数据
+        if archive_entry_filetype(entry!) == AE_IFREG {
+            var buffer = [UInt8](repeating: 0, count: 8192)
+            while true {
+                let bytesRead = archive_read_data(archive, &buffer, buffer.count)
+                if bytesRead <= 0 { break }
+                archive_write_data_block(disk, buffer, bytesRead, 0)
+            }
+        }
+        
+        archive_write_finish_entry(disk)
+    }
+    
+    archive_read_close(archive)
+    archive_write_close(disk)
+}
 ```
 
-### 压缩多个文件
+### 创建 zip 归档
 
 ```swift
-// 示例代码 - 压缩多个文件
-// 具体实现需要根据 libarchive C API 进行封装
+import Foundation
+
+func createZipArchive(sourceFiles: [URL], destination: URL) throws {
+    let archive = archive_write_new()
+    defer { archive_write_free(archive) }
+    
+    // 设置格式为 zip
+    archive_write_set_format_zip(archive)
+    
+    // 添加 deflate 压缩
+    archive_write_add_filter_deflate(archive)
+    
+    archive_write_open_filename(archive, destination.path)
+    
+    for fileURL in sourceFiles {
+        var entry = archive_entry_new()
+        defer { archive_entry_free(entry) }
+        
+        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        let type = attributes[.type] as! FileAttributeType
+        
+        if type == .typeRegular {
+            archive_entry_set_pathname(entry, fileURL.lastPathComponent)
+            archive_entry_set_size(entry, attributes[.size] as! Int64)
+            archive_entry_set_filetype(entry, AE_IFREG)
+            archive_entry_set_perm(entry, 0644)
+            
+            archive_write_header(archive, entry)
+            
+            let data = try Data(contentsOf: fileURL)
+            data.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
+                if let baseAddress = bytes.baseAddress {
+                    archive_write_data(archive, baseAddress, data.count)
+                }
+            }
+        }
+    }
+    
+    archive_write_close(archive)
+}
 ```
 
-> 注意: 当前项目已包含 libarchive 的 xcframework,但 Swift 封装层仍在开发中。您可以直接通过 C API 使用,或等待完整的 Swift 封装实现。
+### 解压 zip 归档
+
+```swift
+import Foundation
+
+func extractZipArchive(archiveURL: URL, destinationDirectory: URL) throws {
+    let archive = archive_read_new()
+    defer { archive_read_free(archive) }
+    
+    // 支持所有格式
+    archive_read_support_format_all(archive)
+    archive_read_support_filter_all(archive)
+    
+    archive_read_open_filename(archive, archiveURL.path, 10240)
+    
+    let disk = archive_write_disk_new()
+    defer { archive_write_free(disk) }
+    
+    archive_write_disk_set_options(disk, ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL)
+    
+    var entry: UnsafeMutablePointer<archive_entry>?
+    while archive_read_next_header(archive, &entry) == ARCHIVE_OK {
+        let path = destinationDirectory.appendingPathComponent(String(cString: archive_entry_pathname(entry!)))
+        archive_entry_set_pathname(entry, path.path)
+        
+        archive_write_header(disk, entry)
+        
+        if archive_entry_filetype(entry!) == AE_IFREG {
+            var buffer = [UInt8](repeating: 0, count: 8192)
+            while true {
+                let bytesRead = archive_read_data(archive, &buffer, buffer.count)
+                if bytesRead <= 0 { break }
+                archive_write_data_block(disk, buffer, bytesRead, 0)
+            }
+        }
+        
+        archive_write_finish_entry(disk)
+    }
+    
+    archive_read_close(archive)
+    archive_write_close(disk)
+}
+```
+
+### 列出归档内容
+
+```swift
+import Foundation
+
+func listArchiveContents(archiveURL: URL) throws -> [String] {
+    let archive = archive_read_new()
+    defer { archive_read_free(archive) }
+    
+    archive_read_support_format_all(archive)
+    archive_read_support_filter_all(archive)
+    
+    archive_read_open_filename(archive, archiveURL.path, 10240)
+    
+    var entries: [String] = []
+    var entry: UnsafeMutablePointer<archive_entry>?
+    
+    while archive_read_next_header(archive, &entry) == ARCHIVE_OK {
+        let path = String(cString: archive_entry_pathname(entry!))
+        let size = archive_entry_size(entry!)
+        let type = archive_entry_filetype(entry!)
+        
+        let typeString: String
+        if type == AE_IFREG {
+            typeString = "文件"
+        } else if type == AE_IFDIR {
+            typeString = "目录"
+        } else {
+            typeString = "其他"
+        }
+        
+        entries.append("\(typeString): \(path) (\(size) 字节)")
+    }
+    
+    archive_read_close(archive)
+    
+    return entries
+}
+
+// 使用示例
+// do {
+//     let entries = try listArchiveContents(archiveURL: URL(fileURLWithPath: "/path/to/archive.tar"))
+//     for entry in entries {
+//         print(entry)
+//     }
+// } catch {
+//     print("错误: \(error)")
+// }
+```
+
+### 创建 gzip 压缩的 tar 归档
+
+```swift
+import Foundation
+
+func createTarGzArchive(sourceFiles: [URL], destination: URL) throws {
+    let archive = archive_write_new()
+    defer { archive_write_free(archive) }
+    
+    // 设置格式为 tar
+    archive_write_set_format_pax_restricted(archive)
+    
+    // 添加 gzip 压缩
+    archive_write_add_filter_gzip(archive)
+    
+    archive_write_open_filename(archive, destination.path)
+    
+    for fileURL in sourceFiles {
+        var entry = archive_entry_new()
+        defer { archive_entry_free(entry) }
+        
+        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        let type = attributes[.type] as! FileAttributeType
+        
+        if type == .typeRegular {
+            archive_entry_set_pathname(entry, fileURL.lastPathComponent)
+            archive_entry_set_size(entry, attributes[.size] as! Int64)
+            archive_entry_set_filetype(entry, AE_IFREG)
+            archive_entry_set_perm(entry, 0644)
+            
+            archive_write_header(archive, entry)
+            
+            let data = try Data(contentsOf: fileURL)
+            data.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
+                if let baseAddress = bytes.baseAddress {
+                    archive_write_data(archive, baseAddress, data.count)
+                }
+            }
+        }
+    }
+    
+    archive_write_close(archive)
+}
+```
+
+### 使用 Swift 封装 (推荐)
+
+虽然项目当前已包含 libarchive 的 xcframework 并支持直接使用 C API,但我建议创建一个更符合 Swift 习惯的封装层。这样可以:
+
+- 使用 Swift 的类型系统保证类型安全
+- 利用 Swift 的错误处理机制
+- 提供更简洁、易用的 API
+
+如果您需要一个完整的 Swift 封装层,我可以为您实现。
 
 ## 🔨 构建说明
 
