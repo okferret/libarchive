@@ -1,0 +1,17 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/cmake_install.cmake",
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/libarchive/cmake_install.cmake",
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/libarchive/test/cmake_install.cmake",
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/cat/cmake_install.cmake",
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/cat/test/cmake_install.cmake",
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/tar/cmake_install.cmake",
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/tar/test/cmake_install.cmake",
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/cpio/cmake_install.cmake",
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/cpio/test/cmake_install.cmake",
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/unzip/cmake_install.cmake",
+		"/Users/okferret/Developer/Projects/libarchive/Sources/libarchive-build/build/iphoneos/unzip/test/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
