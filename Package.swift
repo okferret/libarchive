@@ -17,7 +17,7 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .binaryTarget(
             name: "libarchive",
-            path: "Sources/libarchive-build/libarchive.xcframework"
+            path: "libarchive-apple-build/libarchive.xcframework"
         ),
         .testTarget(
             name: "libarchiveTests",
