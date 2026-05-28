@@ -16,7 +16,7 @@ let package = Package(
         // 对外暴露 libarchive XCFramework，其他项目通过 SPM 依赖此包即可使用
         .library(
             name: "libArchive",
-            targets: ["libArchive"]
+            targets: ["libArchiveWrapper"]
         ),
     ],
     targets: [
@@ -25,17 +25,23 @@ let package = Package(
         // 发布到 GitHub Release 后，改用 url + checksum 方式：
         //
         // .binaryTarget(
-        //     name: "libArchive",
+        //     name: "libarchive",
         //     url: "https://github.com/<owner>/libArchive/releases/download/<tag>/libArchive.xcframework.zip",
         //     checksum: "e9be266dcd5faee3e5967e38f2000af78fabf0c2649aeec9f073595dacf4c46f"
         // ),
         .binaryTarget(
-            name: "libArchive",
+            name: "libarchive",
             path: "libarchive-apple-build/libArchive.xcframework"
+        ),
+        // ===== 包装目标：将 binaryTarget 暴露给外部使用 =====
+        .target(
+            name: "libArchiveWrapper",
+            dependencies: ["libarchive"],
+            path: "Sources/libArchiveWrapper"
         ),
         .testTarget(
             name: "libArchiveTests",
-            dependencies: ["libArchive"]
+            dependencies: ["libArchiveWrapper"]
         ),
     ]
 )
