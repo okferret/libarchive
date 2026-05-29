@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "libArchive",
+    name: "libarchive",
     platforms: [
         .iOS(.v13),
         .tvOS(.v13),
@@ -34,7 +34,7 @@ let package = Package(
             path: "libarchive-apple-build/libarchive.xcframework"
         ),
         .testTarget(
-            name: "libArchiveTests",
+            name: "libarchiveTests",
             dependencies: ["libarchive"]
         ),
     ]
