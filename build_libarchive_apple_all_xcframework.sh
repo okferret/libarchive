@@ -22,7 +22,7 @@ BUILD_DIR="$ROOT/build"
 XZ_BUILD_DIR="$ROOT/xz-build"
 ZSTD_BUILD_DIR="$ROOT/zstd-build"
 LZ4_BUILD_DIR="$ROOT/lz4-build"
-XC_OUT="$ROOT/libArchive.xcframework"
+XC_OUT="$ROOT/libarchive.xcframework"
 
 # ===== CPU 核心数（并发时每个任务独占全部核心，由 OS 调度）=====
 CPU_COUNT=$(sysctl -n hw.ncpu)

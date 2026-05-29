@@ -15,8 +15,8 @@ let package = Package(
     products: [
         // 对外暴露 libarchive XCFramework，其他项目通过 SPM 依赖此包即可使用
         .library(
-            name: "libArchive",
-            targets: ["libArchiveWrapper"]
+            name: "libarchive",
+            targets: ["libarchive"]
         ),
     ],
     targets: [
@@ -31,17 +31,11 @@ let package = Package(
         // ),
         .binaryTarget(
             name: "libarchive",
-            path: "libarchive-apple-build/libArchive.xcframework"
-        ),
-        // ===== 包装目标：将 binaryTarget 暴露给外部使用 =====
-        .target(
-            name: "libArchiveWrapper",
-            dependencies: ["libarchive"],
-            path: "Sources/libArchiveWrapper"
+            path: "libarchive-apple-build/libarchive.xcframework"
         ),
         .testTarget(
             name: "libArchiveTests",
-            dependencies: ["libArchiveWrapper"]
+            dependencies: ["libarchive"]
         ),
     ]
 )
